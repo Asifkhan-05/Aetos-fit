@@ -22,3 +22,28 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
+=======
+
+.vercel
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+release/
+out/
+win-unpacked/
+
+# Electron files
+*.exe
+*.blockmap
+latest.yml
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+>>>>>>> 52746cd (Initial commit)
