@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './MainLayout';
 import Dashboard from './Dashboard';
@@ -10,32 +10,28 @@ import Onboarding from './Onboarding';
 import ProgressTracker from './ProgressTracker';
 import RecoveryTracker from './RecoveryTracker';
 import ActiveWorkout from './ActiveWorkout';
+import { useAuth } from './context/AuthContext';
 
 function App() {
-  const [userStatus, setUserStatus] = useState<'loading' | 'found' | 'not-found'>('loading');
+  const { profile, loading } = useAuth();
 
-  useEffect(() => {
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) setUserStatus('not-found');
-        else setUserStatus('found');
-      })
-      .catch(() => setUserStatus('not-found'));
-  }, []);
-
-  if (userStatus === 'loading') {
-    return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-      <div style={{ color: 'var(--accent-cyan)' }}>Initializing AETOS FIT...</div>
-    </div>;
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+        <div style={{ color: 'var(--accent-cyan)' }}>Authenticating AETOS FIT...</div>
+      </div>
+    );
   }
+
+  // If no profile exists, they must go through onboarding
+  const isSetup = !!profile;
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/onboarding" element={userStatus === 'found' ? <Navigate to="/" /> : <Onboarding />} />
-        <Route path="/active-workout" element={userStatus === 'not-found' ? <Navigate to="/onboarding" /> : <ActiveWorkout />} />
-        <Route path="/" element={userStatus === 'not-found' ? <Navigate to="/onboarding" /> : <MainLayout />}>
+        <Route path="/onboarding" element={isSetup ? <Navigate to="/" /> : <Onboarding />} />
+        <Route path="/active-workout" element={!isSetup ? <Navigate to="/onboarding" /> : <ActiveWorkout />} />
+        <Route path="/" element={!isSetup ? <Navigate to="/onboarding" /> : <MainLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="muscle-map" element={<MuscleMap />} />
           <Route path="workout-generator" element={<WorkoutGenerator />} />

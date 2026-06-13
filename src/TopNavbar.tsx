@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Search, Bell, Flame, Zap, Moon, Sun, Bot, ChevronDown, User, Settings, LogOut, Target, Dumbbell, Activity, Utensils } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 // Mock Search Database
 const globalSearchIndex = [
@@ -17,7 +18,7 @@ const globalSearchIndex = [
 
 const TopNavbar = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState({ name: 'User', xp: 0, streak: 0 });
+  const { profile, signOut } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -44,14 +45,6 @@ const TopNavbar = () => {
   });
 
   useEffect(() => {
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) setUser(data);
-      })
-      .catch(console.error);
-
-    // Sync stats from Dashboard
     const handleUpdate = () => {
       setLocalStats({
         streak: parseInt(localStorage.getItem('aetos_stat_streak') || '0'),
@@ -120,7 +113,8 @@ const TopNavbar = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate('/onboarding');
   };
 
@@ -320,7 +314,7 @@ const TopNavbar = () => {
                   padding: '8px'
                 }}>
                   <div style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 600, color: 'white', fontSize: '16px' }}>{user.name} <span style={{color: 'var(--accent-cyan)', fontSize: '14px', marginLeft: '4px'}}>• Lvl {localStats.level}</span></div>
+                    <div style={{ fontWeight: 600, color: 'white', fontSize: '16px' }}>{profile?.username || 'User'} <span style={{color: 'var(--accent-cyan)', fontSize: '14px', marginLeft: '4px'}}>• Lvl {localStats.level}</span></div>
                     <div style={{ fontSize: '12px', color: 'var(--accent-purple)', fontWeight: 'bold', marginTop: '6px' }}>{rank.tier}</div>
                     <div style={{ fontSize: '15px', color: '#fbbf24', fontWeight: 'bold', marginBottom: '4px' }}>"{rank.title}"</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{rank.desc}</div>

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Play, Filter, Dumbbell, Target, AlertTriangle, Lightbulb, Activity, ChevronRight, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- MOCK DATABASE REPLACED WITH BACKEND FETCH ---
+import { exercises } from './data/exercises';
 
 const FILTER_OPTIONS = {
   target: ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
@@ -30,16 +30,11 @@ const ExerciseLibrary = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   React.useEffect(() => {
-    fetch('/api/exercises')
-      .then(res => res.json())
-      .then(data => {
-        setExerciseDB(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    // Simulate slight loading for UI feel, but use local data
+    setTimeout(() => {
+      setExerciseDB(exercises);
+      setLoading(false);
+    }, 300);
   }, []);
 
   // Filter Logic

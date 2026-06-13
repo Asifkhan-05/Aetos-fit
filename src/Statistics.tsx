@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, Flame, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from './lib/supabase';
+import { useAuth } from './context/AuthContext';
 
 const Statistics = () => {
-  const [stats, setStats] = useState([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const { user } = useAuth();
   
   const volume = parseInt(localStorage.getItem('aetos_stat_volume') || '0');
 
@@ -27,13 +30,27 @@ const Statistics = () => {
   ];
 
   useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) setStats(data);
-      })
-      .catch(console.error);
-  }, []);
+    if (!user) return;
+    const fetchStats = async () => {
+      const { data, error } = await supabase
+        .from('workout_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('completed_at', { ascending: false })
+        .limit(10);
+      
+      if (!error && data) {
+        const formatted = data.map(d => ({
+          id: d.id,
+          date: new Date(d.completed_at).toLocaleDateString(),
+          workouts_completed: d.workout_name,
+          calories_burned: d.calories_burned
+        }));
+        setStats(formatted);
+      }
+    };
+    fetchStats();
+  }, [user]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -104,7 +121,7 @@ const Statistics = () => {
               <motion.div whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.05)' }} key={stat.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
                 <span style={{ color: 'white', fontWeight: 500 }}>{stat.date}</span>
                 <div style={{ display: 'flex', gap: '24px' }}>
-                  <span style={{ color: 'var(--accent-cyan)' }}>{stat.workouts_completed} Sets</span>
+                  <span style={{ color: 'var(--accent-cyan)' }}>{stat.workouts_completed}</span>
                   <span style={{ color: '#f97316' }}>{stat.calories_burned} kcal</span>
                 </div>
               </motion.div>

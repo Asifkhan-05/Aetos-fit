@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { Play, Activity, Target, Zap, Shield, Flame, Dumbbell, Brain, Droplets, Moon, ChevronRight, Clock, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from './context/AuthContext';
+import { supabase } from './lib/supabase';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { profile, user, refreshProfile } = useAuth();
 
   // Load state from localStorage or initialize to zero-state
   const [volume, setVolume] = useState(() => parseInt(localStorage.getItem('aetos_stat_volume') || '0'));
   const [energy, setEnergy] = useState(() => parseInt(localStorage.getItem('aetos_stat_energy') || '0'));
-  const [xp, setXp] = useState(() => parseInt(localStorage.getItem('aetos_stat_xp') || '0'));
-  const [level, setLevel] = useState(() => parseInt(localStorage.getItem('aetos_stat_level') || '1'));
+  const [xp, setXp] = useState(profile?.xp || 0);
+  const [level, setLevel] = useState(Math.floor((profile?.xp || 0) / 10000) + 1);
   const [workoutsLogged, setWorkoutsLogged] = useState(() => parseInt(localStorage.getItem('aetos_stat_workouts') || '0'));
   const [consistency, setConsistency] = useState(() => JSON.parse(localStorage.getItem('aetos_stat_consistency') || '[0,0,0,0,0,0,0]'));
-  const [streak, setStreak] = useState(() => parseInt(localStorage.getItem('aetos_stat_streak') || '0'));
+  const [streak, setStreak] = useState(profile?.streak || 0);
   const [lastWorkoutDate, setLastWorkoutDate] = useState(() => localStorage.getItem('aetos_last_workout_date') || '');
 
   // Active Protocol State
@@ -26,7 +29,7 @@ const Dashboard = () => {
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
 
-  const handleLogWorkout = (e: React.FormEvent) => {
+  const handleLogWorkout = async (e: React.FormEvent) => {
     e.preventDefault();
     const s = parseInt(sets) || 0;
     const r = parseInt(reps) || 0;
@@ -78,11 +81,25 @@ const Dashboard = () => {
 
     localStorage.setItem('aetos_stat_volume', newVolume.toString());
     localStorage.setItem('aetos_stat_energy', newEnergy.toString());
-    localStorage.setItem('aetos_stat_xp', newXp.toString());
-    localStorage.setItem('aetos_stat_level', newLevel.toString());
     localStorage.setItem('aetos_stat_workouts', newWorkouts.toString());
     localStorage.setItem('aetos_stat_consistency', JSON.stringify(newConsistency));
-    localStorage.setItem('aetos_stat_streak', newStreak.toString());
+    
+    // Save to Supabase
+    if (user) {
+      await supabase.from('workout_progress').insert({
+        user_id: user.id,
+        workout_name: exercise,
+        duration: s * r * 1.5, // estimate
+        calories_burned: addedEnergy
+      });
+      
+      // The trigger automatically adds 10 XP per workout.
+      // We will also update the streak manually here if needed, but for now just refresh profile to get new XP
+      await supabase.from('users').update({ streak: newStreak }).eq('id', user.id);
+      await refreshProfile();
+      // The local states will eventually be replaced entirely by server data, but this keeps the UI responsive
+      setXp(profile?.xp ? profile.xp + 10 : newXp);
+    }
 
     window.dispatchEvent(new Event('aetos_update'));
 
