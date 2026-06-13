@@ -62,16 +62,24 @@ const Onboarding = () => {
 
         if (authData.user) {
           // Create Profile in public.users
-          const { error: profileError } = await supabase.from('users').insert({
-            id: authData.user.id,
-            username: formData.username,
-            age: parseInt(formData.age),
-            height: formData.height,
-            weight: formData.weight,
-            goal: formData.goal,
-            xp: 0,
-            streak: 0
-          });
+        const { error: profileError } = await supabase
+  .from('users')
+  .insert({
+    id: authData.user.id,
+    email: formData.email,
+    username: formData.username,
+    age: Number(formData.age),
+    height: formData.height,
+    weight: formData.weight,
+    goal: formData.goal,
+    xp: 0,
+    streak: 0
+  });
+
+if (profileError) {
+  console.error(profileError);
+  throw profileError;
+}
 
           if (profileError) throw profileError;
 
